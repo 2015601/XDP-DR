@@ -16,7 +16,7 @@ CC ?= gcc
 
 XDP_C = dr_kernel.c dr_tc.c
 XDP_OBJ = ${XDP_C:.c=.o}
-LIBBPF = ../libbpf
+LIBBPF = libbpf
 OBJECT_LIBBPF = ${LIBBPF}/src/libbpf.a
 CTL_OBJ = dr_ctl.o
 CTL = drctl
