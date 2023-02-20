@@ -39,3 +39,4 @@
 *.hex
 *.o
 ctl
+.vscode

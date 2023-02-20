@@ -5,7 +5,6 @@
 #include <linux/types.h>
 #include <linux/tcp.h>
 #include <asm/byteorder.h>
-#include "bpf_utils.h"
 
 struct bpf_tcphdr {
 	__be16	source;

@@ -3,8 +3,8 @@
 #include <linux/pkt_sched.h>
 #include <linux/ip.h>
 #include <sys/socket.h>
-#include "bpf_helper.h"
-#include "bpf_ip.h"
+#include "xlb_helper.h"
+#include "xlb_ip.h"
 
 /*
  * tc classfiy action

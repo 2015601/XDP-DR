@@ -1,47 +1,46 @@
-# Common Makefile parts for BPF-building with libbpf
-# --------------------------------------------------
-# SPDX-License-Identifier: (GPL-2.0 OR BSD-2-Clause)
-#
-# This file should be included from your Makefile like:
-#  COMMON_DIR = ../common/
-#  include $(COMMON_DIR)/common.mk
-#
-# It is expected that you define the variables:
-#  XDP_TARGETS and USER_TARGETS
-# as a space-separated list
-#
+# XDP Load Balance
+
 LLC ?= llc
 CLANG ?= clang
 CC ?= gcc
 
-XDP_C = dr_kernel.c dr_tc.c
-XDP_OBJ = ${XDP_C:.c=.o}
-LIBBPF = libbpf
-OBJECT_LIBBPF = ${LIBBPF}/src/libbpf.a
-CTL_OBJ = dr_ctl.o
-CTL = drctl
-CFLAGS = -I${LIBBPF}/src
+LIBBPF = libbpf/src
+OBJECT_LIBBPF = ${LIBBPF}/libbpf.a
 
-all: llvm-check $(XDP_OBJ) 
+LOADER = xlb_loader
+CONTRL = xlb_adm
 
-.PHONY: clean ctl $(CLANG) $(LLC)
+CFLAGS = -I${LIBBPF} -g -O0
+LDFLAGS = -L$(LIBBPF) -l:libbpf.a -lelf -lz
 
-ctl: $(CTL_OBJ) $(OBJECT_LIBBPF)
-	$(CC) $(CFLAGS) -o $@ $< -L../libbpf/src -l:libbpf.a
+LOADER_OBJ = xlb_load.o
 
-$(CTL_OBJ): dr_ctl.c
-	$(CC) -Wall $(CFLAGS) -g -O2 -c -o $@ $(COMMON_OBJS) $<
+ADM_OBJ = xlb_admin.o
 
+XDP_OBJ = xlb_xdp_kernel.o \
+	xlb_bpf_tc.o
+
+
+all: llvm-check $(XDP_OBJ) loader admin
+
+.PHONY: clean loader admin $(CLANG) $(LLC)
+
+loader: $(OBJECT_LIBBPF) $(LOADER_OBJ)
+	$(CC) -o $(LOADER) $(LOADER_OBJ) $(LDFLAGS)
+
+admin: $(OBJECT_LIBBPF) $(ADM_OBJ)
+	$(CC) -o $(CONTRL) $(ADM_OBJ) $(LDFLAGS)
 
 $(OBJECT_LIBBPF):
 	make -C ${LIBBPF}/src
 
 clean:
-	rm -f $(XDP_OBJ)
 	rm -f *.ll
 	rm -f *~
 	rm -f *.o
 	rm -f ctl
+	rm -f $(LOADER)
+	rm -f $(CONTRL)
 
 llvm-check: $(CLANG) $(LLC)
 	@for TOOL in $^ ; do \
@@ -63,3 +62,6 @@ $(XDP_OBJ): %.o: %.c
 	    -Werror \
 	    -O2 -emit-llvm -c -g -o ${@:.o=.ll} $<
 	$(LLC) -march=bpf -filetype=obj -o $@ ${@:.o=.ll}
+
+.c.o:
+	$(CC) -Wall $(CFLAGS) -c -o $@ $<
